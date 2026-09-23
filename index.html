@@ -7,7 +7,7 @@
 <section class="slide" data-ms="10000"><div class="brand">KUMON</div><div><div class="k">Student Success</div><h1>Small steps.<br><span class="blue">Big progress.</span></h1><p>We celebrate persistence, accuracy, independence and progress at every level.</p></div></section>
 <section class="slide" data-ms="15000"><div class="brand">KUMON</div><div><div class="k">Get Started</div><h1>Book a Free Assessment</h1><div class="qr">QR CODE</div><p>Scan to learn more and schedule an assessment.</p><p class="small">Replace with your actual assessment QR image.</p></div></section>
 <section class="slide" data-ms="10000"><div class="brand">KUMON</div><div><div class="k">Centre News</div><h1>Announcements</h1><p>Update this screen with closures, special hours, reminders or upcoming events.</p></div></section>
-<section class="slide video" id="videoSlide"><video id="promo" muted playsinline preload="metadata"><source src="media/promo.mp4" type="video/mp4"></video></section>
+<section class="slide video" id="videoSlide"><video id="promo" controls playsinline preload="metadata"><source src="media/promo.mp4" type="video/mp4"></video></section>
 <div class="progress" id="p"></div>
 <script>
 const slides=[...document.querySelectorAll(".slide")], bar=document.getElementById("p");
@@ -18,15 +18,24 @@ function show(n){
  clearAll(); slides.forEach(x=>x.classList.remove("active")); idx=(n+slides.length)%slides.length;
  const s=slides[idx]; s.classList.add("active"); bar.style.transition="none";bar.style.width="0";
  if(s.id==="videoSlide"){
-   const v=document.getElementById("promo"); let advanced=false;
-   const advance=()=>{if(advanced)return;advanced=true;next()};
-   v.onended=advance; v.onerror=advance; v.onabort=advance;
-   // If metadata/file never loads, do not leave a black screen hanging forever.
-   videoWatch=setTimeout(advance,5000);
-   v.currentTime=0; v.muted=true;
-   const playPromise=v.play();
-   if(playPromise && playPromise.catch) playPromise.catch(advance);
-   v.onloadedmetadata=()=>{clearTimeout(videoWatch); videoWatch=setTimeout(advance, Math.max(5000,Math.ceil(v.duration*1000)+2000));};
+   const v=document.getElementById("promo");
+   v.onended=()=>next();
+   v.onerror=()=>console.error("Video failed to load.");
+   v.onabort=()=>console.error("Video loading was aborted.");
+   v.currentTime=0;
+   v.muted=false;
+   v.volume=1;
+   v.load();
+   const tryPlay=()=>{
+     const playPromise=v.play();
+     if(playPromise && playPromise.catch){
+       playPromise.catch(()=>{
+         console.log("Autoplay with sound was blocked. Press Play using the visible controls.");
+       });
+     }
+   };
+   if(v.readyState>=2){ tryPlay(); }
+   else { v.oncanplay=()=>{v.oncanplay=null;tryPlay();}; }
  } else {
    const ms=Number(s.dataset.ms||10000);
    requestAnimationFrame(()=>{bar.style.transition=`width ${ms}ms linear`;bar.style.width="100%"});
